@@ -15,8 +15,8 @@ logger.Info("Main program is running and log manager is started, program is runn
 logger.Info("Program started");
 
 
-string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Blogs),
-                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Blog),
+string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Create_Post),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Posts),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
@@ -24,8 +24,24 @@ string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU
 
 string menuCheckCommand;
 
+// MAIN MENU LOOP
+// do
+// {
+//     menuCheckCommand = UserInteractions.OptionsSelector(MAIN_MENU_OPTIONS_IN_ORDER);
+
+//     logger.Info($"User choice: \"{menuCheckCommand}\"");
+
+//     if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit))
+//     {
+//         logger.Info("Program quitting...");
+//     }
+// } while (menuCheckCommand != enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)); //If user intends to exit the program
+
+
+
 try
 {
+    var db = new NWContext();
     string choice;
     do
     {
@@ -34,13 +50,33 @@ try
         Console.WriteLine("\"q\" to quit");
         choice = Console.ReadLine();
         Console.Clear();
+        logger.Info($"Option {choice} selected");
+        if (choice == "1")
+        {
+            var query = db.Categories.OrderBy(p => p.CategoryName);
 
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{query.Count()} records returned");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.CategoryName} - {item.Description}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        Console.WriteLine();
     } while (choice.ToLower() != "q");
 }
 catch (Exception ex)
 {
     logger.Error(ex.Message);
 }
+
+logger.Info("Program ended");
+
+
+
+
 
 
 // MAIN MENU LOOP
@@ -223,8 +259,8 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
     return mainMenuEnum switch
     {
         MAIN_MENU_OPTIONS.Exit => "Quit program",
-        MAIN_MENU_OPTIONS.Display_All_Blogs => $"Display all blogs", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
-        MAIN_MENU_OPTIONS.Add_Blog => "Add Blog",
+        MAIN_MENU_OPTIONS.Display_Categories => $"Display all blogs", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
+        MAIN_MENU_OPTIONS.Add_Category => "Add Blog",
         MAIN_MENU_OPTIONS.Create_Post => "Create New Post",
         MAIN_MENU_OPTIONS.Display_Posts => "Display Posts",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
@@ -234,8 +270,8 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
 public enum MAIN_MENU_OPTIONS
 {
     Exit,
-    Display_All_Blogs,
-    Add_Blog,
+    Display_Categories,
+    Add_Category,
     Create_Post,
     Display_Posts
 }
