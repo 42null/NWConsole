@@ -1,6 +1,8 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using NLog;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using NWConsole.Model;
 
 // create instance of Logger
 // NLog.Logger logger = UserInteractions.getLogger();
@@ -21,6 +23,25 @@ string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU
 
 
 string menuCheckCommand;
+
+try
+{
+    string choice;
+    do
+    {
+        Console.WriteLine("1) Display Categories");
+        Console.WriteLine("2) Add Category");
+        Console.WriteLine("\"q\" to quit");
+        choice = Console.ReadLine();
+        Console.Clear();
+
+    } while (choice.ToLower() != "q");
+}
+catch (Exception ex)
+{
+    logger.Error(ex.Message);
+}
+
 
 // MAIN MENU LOOP
 // do
@@ -84,7 +105,7 @@ string menuCheckCommand;
 //     else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Create_Post))
 //     {
 //         Blog selectedBlog = selectBlog("Please select a blog for your new post: ");
-        
+
 //         string postTitle = UserInteractions.UserCreatedStringObtainer("Please enter the title of the new post", 1, false, false);
 //         string postContent = UserInteractions.UserCreatedStringObtainer("Please enter the content for the new post", 1, false, false);
 //         try
@@ -166,7 +187,7 @@ string menuCheckCommand;
 //     // Get all Blogs from the database
 //     var query = db.Blogs.Include("Posts").OrderBy(b => b.Name);
 //     // var query = db.Blogs.OrderBy(b => b.Name);
-    
+
 //     return query;
 // }
 
