@@ -20,10 +20,9 @@ logger.Info("Program started");
 
 string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
-                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_And_Related_Products),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
-
-
 
 try
 {
@@ -88,7 +87,7 @@ try
                 }
             }
         }
-        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_And_Related_Products)){
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products)){
             var query = db.Categories.OrderBy(p => p.CategoryId);
 
             Console.WriteLine("Select the category whose products you want to display:");
@@ -106,6 +105,17 @@ try
             foreach (Product p in category.Products)
             {
                 Console.WriteLine($"\t{p.ProductName}");
+            }
+        }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products)){
+            var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.CategoryName}");
+                foreach (Product p in item.Products)
+                {
+                    Console.WriteLine($"\t{p.ProductName}");
+                }
             }
         }
         else
@@ -133,7 +143,8 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Exit => "Quit program",
         MAIN_MENU_OPTIONS.Display_Categories => $"Display Categories", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
         MAIN_MENU_OPTIONS.Add_Category => "Add Category",
-        MAIN_MENU_OPTIONS.Display_Category_And_Related_Products => "Display Category and related products",
+        MAIN_MENU_OPTIONS.Display_Category_and_Related_Products => "Display Category and related products",
+        MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products => "Display all Categories and their related products",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -143,5 +154,6 @@ public enum MAIN_MENU_OPTIONS
     Exit,
     Display_Categories,
     Add_Category,
-    Display_Category_And_Related_Products,
+    Display_Category_and_Related_Products,
+    Display_All_Categories_and_Their_Related_Products
 }
