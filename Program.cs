@@ -28,35 +28,17 @@ try
     var db = new NWContext();
     string menuCheckCommand;
     // MAIN MENU LOOP
-    // do
-    // {
-    //     menuCheckCommand = UserInteractions.OptionsSelector(MAIN_MENU_OPTIONS_IN_ORDER);
-
-    //     logger.Info($"User choice: \"{menuCheckCommand}\"");
-
-    //     if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit))
-    //     {
-    //         logger.Info("Program quitting...");
-    //     }
-    //     else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Blogs))
-    //     {
-    //     }
-    //     else
-    //     {
-    //         logger.Warn("That menu option is not available, please try again.");
-    //     }
-
-    // } while (menuCheckCommand != enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)); //If user intends to exit the program
-
     do
     {
-        Console.WriteLine("1) Display Categories");
-        Console.WriteLine("2) Add Category");
-        Console.WriteLine("\"q\" to quit");
-        menuCheckCommand = Console.ReadLine();
-        Console.Clear();
-        logger.Info($"Option {menuCheckCommand} selected");
-        if (menuCheckCommand == "1")
+        menuCheckCommand = UserInteractions.OptionsSelector(MAIN_MENU_OPTIONS_IN_ORDER);
+
+        logger.Info($"User choice: \"{menuCheckCommand}\"");
+
+        if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit))
+        {
+            logger.Info("Program quitting...");
+        }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories))
         {
             var query = db.Categories.OrderBy(p => p.CategoryName);
 
@@ -69,7 +51,7 @@ try
             }
             Console.ForegroundColor = ConsoleColor.White;
         }
-        else if (menuCheckCommand == "2")
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category))
         {
             Category category = new Category();
             Console.WriteLine("Enter Category Name:");
@@ -94,8 +76,13 @@ try
                 }
             }
         }
-        Console.WriteLine();
-    } while (menuCheckCommand.ToLower() != "q");
+        else
+        {
+            logger.Warn("That menu option is not available, please try again.");
+        }
+
+    } while (menuCheckCommand != enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)); //If user intends to exit the program
+
 }
 catch (Exception ex)
 {
