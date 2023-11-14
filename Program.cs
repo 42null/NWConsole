@@ -5,6 +5,7 @@ using System.Linq;
 using NWConsole.Model;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 // create instance of Logger
 // NLog.Logger logger = UserInteractions.getLogger();
@@ -100,8 +101,12 @@ try
             int id = int.Parse(Console.ReadLine());
             Console.Clear();
             logger.Info($"CategoryId {id} selected");
-            Category category = db.Categories.FirstOrDefault(c => c.CategoryId == id);
+            Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id);
             Console.WriteLine($"{category.CategoryName} - {category.Description}");
+            foreach (Product p in category.Products)
+            {
+                Console.WriteLine($"\t{p.ProductName}");
+            }
         }
         else
         {
