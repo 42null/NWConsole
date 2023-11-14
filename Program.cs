@@ -19,6 +19,7 @@ logger.Info("Program started");
 
 string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_And_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
 
 
@@ -86,6 +87,22 @@ try
                 }
             }
         }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_And_Related_Products)){
+            var query = db.Categories.OrderBy(p => p.CategoryId);
+
+            Console.WriteLine("Select the category whose products you want to display:");
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+            int id = int.Parse(Console.ReadLine());
+            Console.Clear();
+            logger.Info($"CategoryId {id} selected");
+            Category category = db.Categories.FirstOrDefault(c => c.CategoryId == id);
+            Console.WriteLine($"{category.CategoryName} - {category.Description}");
+        }
         else
         {
             logger.Warn("That menu option is not available, please try again.");
@@ -111,6 +128,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Exit => "Quit program",
         MAIN_MENU_OPTIONS.Display_Categories => $"Display Categories", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
         MAIN_MENU_OPTIONS.Add_Category => "Add Category",
+        MAIN_MENU_OPTIONS.Display_Category_And_Related_Products => "Display Category and related products",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -120,4 +138,5 @@ public enum MAIN_MENU_OPTIONS
     Exit,
     Display_Categories,
     Add_Category,
+    Display_Category_And_Related_Products,
 }
