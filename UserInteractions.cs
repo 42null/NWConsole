@@ -23,12 +23,24 @@ public sealed class UserInteractions
     public static ConsoleColor fatalColor = ConsoleColor.DarkRed;
 
 
+    public static ConsoleColor displayColor = ConsoleColor.DarkMagenta;
+    public static ConsoleColor addColor = ConsoleColor.Blue;
+    public static ConsoleColor editColor = ConsoleColor.Green;
+    public static ConsoleColor removeColor = ConsoleColor.Red;
+
+
     // public static NLog.Logger getLogger() { return logger; }
 
     public static string OptionsSelector(string[] options){
         return OptionsSelector(options,"Please select an option from the following...");
     }
-    public static string OptionsSelector(string[] options, string customSelectMessage)
+    public static string OptionsSelector(string[] options, bool colorFirstWordsWithDefault){
+        return OptionsSelector(options,"Please select an option from the following...", colorFirstWordsWithDefault);
+    }
+    public static string OptionsSelector(string[] options, string customSelectMessage){
+        return OptionsSelector(options, customSelectMessage, false);
+    }
+    public static string OptionsSelector(string[] options, string customSelectMessage, bool colorFirstWordsWithDefault)
     {
         string userInput;
         int selectedNumber;
@@ -52,7 +64,39 @@ public sealed class UserInteractions
         do
         {
             Console.WriteLine(customSelectMessage);
-            Console.WriteLine(optionsTextAsStr);
+            if(colorFirstWordsWithDefault){
+                // Console.BackgroundColor = ConsoleColor.DarkGreen;
+                ConsoleColor existingColor = Console.ForegroundColor;
+
+                string[] splitIntoLines = optionsTextAsStr.Split("\n");
+                foreach(string line in splitIntoLines)
+                {
+                    int firstSpaceIndex = line.IndexOf(") ")+2;
+                    int afterFirstIndex = line.Substring(firstSpaceIndex).IndexOf(" ");
+
+                    string beforeWord = line.Substring(0,firstSpaceIndex);
+                    Console.Write(beforeWord);
+
+                    string firstWord = line.Substring(firstSpaceIndex,afterFirstIndex);
+                    if(firstWord.ToLower() == "display"){
+                        Console.ForegroundColor = displayColor;
+                    }else if(firstWord.ToLower() == "add"){
+                        Console.ForegroundColor = addColor;
+                    }else if(firstWord.ToLower() == "edit"){
+                        Console.ForegroundColor = editColor;
+                    }else if(firstWord.ToLower() == "delete" || firstWord.ToLower() == "remove"){
+                        Console.ForegroundColor = removeColor;
+                    }
+
+                    Console.Write(firstWord);
+
+                    Console.ForegroundColor = existingColor;
+                    Console.WriteLine(line.Substring(firstSpaceIndex+afterFirstIndex));
+
+                }
+            }else{
+                Console.WriteLine(optionsTextAsStr);
+            }
             Console.Write("Please enter an option from the list: ");
             Console.ForegroundColor = userColor;
             userInput = Console.ReadLine().Trim();
@@ -123,7 +167,6 @@ public sealed class UserInteractions
         string userInputRaw = null;
         int userChosenInteger;
         int defaultAsInt = 0;
-
         if (defaultValue != "" && !int.TryParse(defaultValue, out defaultAsInt))
         {
             loggerWithColors.Error($"Could not use default value of \"{defaultValue}\" as an int. Argument exception error!");

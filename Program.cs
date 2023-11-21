@@ -6,6 +6,7 @@ using NWConsole.Model;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 // create instance of Logger
 // NLog.Logger logger = UserInteractions.getLogger();
@@ -19,9 +20,10 @@ logger.Info("Program started");
 
 
 string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
-                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
 
 try
@@ -31,7 +33,7 @@ try
     // MAIN MENU LOOP
     do
     {
-        menuCheckCommand = UserInteractions.OptionsSelector(MAIN_MENU_OPTIONS_IN_ORDER);
+        menuCheckCommand = UserInteractions.OptionsSelector(MAIN_MENU_OPTIONS_IN_ORDER, true);
 
         logger.Info($"User choice: \"{menuCheckCommand}\"");
 
@@ -107,7 +109,8 @@ try
                 Console.WriteLine($"\t{p.ProductName}");
             }
         }
-        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products)){
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products))
+        {
             var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
             foreach (var item in query)
             {
@@ -115,6 +118,46 @@ try
                 foreach (Product p in item.Products)
                 {
                     Console.WriteLine($"\t{p.ProductName}");
+                }
+            }
+        }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product))
+        {
+            Product product = new Product
+            {
+                ProductName = UserInteractions.UserCreatedStringObtainer("Please enter the name of the new product", 1, false, false),
+                CategoryId = selectCategory("Please select the product's category").CategoryId,
+                Discontinued = false, //New products should not start as discontinued
+                // product.QuantityPerUnit = UserInteractions.UserCreatedIntObtainer("Please enter how many there are per unit", 1, int.MaxValue, false).ToString();
+                QuantityPerUnit = UserInteractions.UserCreatedStringObtainer("Please enter how many there are per unit", 1, false, false),
+                // QuantityPerUnit
+            };
+
+            ValidationContext context = new ValidationContext(product, null, null);
+            List<ValidationResult> results = new List<ValidationResult>();
+
+            var isValid = Validator.TryValidateObject(product, context, results, true);
+            if (isValid)
+            {
+               // check for unique name
+                if (db.Products.Any(r => r.ProductName == product.ProductName))
+                {
+                    // generate validation error
+                    isValid = false;
+                    results.Add(new ValidationResult("Name exists", new string[] { "ProductName" }));
+                }
+                else
+                {
+                    logger.Info("Validation passed");
+                    db.AddProduct(product);
+                    logger.Info($"Product added to category \"{product.Category.CategoryName}\" - {product.ProductName}");
+                }
+            }
+            if (!isValid)
+            {
+                foreach (var result in results)
+                {
+                    logger.Error($"{result.MemberNames.First()} : {result.ErrorMessage}");
                 }
             }
         }
@@ -135,6 +178,44 @@ logger.Info("Program ended");
 
 
 
+Category selectCategory(string selectionMessage){
+    var db = new NWContext();
+    var all = db.Categories.OrderBy(r => r.CategoryName).ToArray();
+    string[] allKeys = new string[all.Count()];
+    for(int i = 0; i < allKeys.Length; i++){ allKeys[i] = all[i].CategoryName; }
+    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
+    foreach(var record in all)
+    {
+        if(record.CategoryName == selectedNameKey){
+            return record;
+        }
+    }
+    throw new ArgumentException();
+}
+Product selectProduct(string selectionMessage){
+    var db = new NWContext();
+    var all = db.Products.OrderBy(r => r.ProductName).ToArray();
+    string[] allKeys = new string[all.Count()];
+    for(int i = 0; i < allKeys.Length; i++){ allKeys[i] = all[i].ProductName; }
+    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
+    foreach(var record in all)
+    {
+        if(record.ProductName == selectedNameKey){
+            return record;
+        }
+    }
+    throw new ArgumentException();
+}
+
+
+
+
+
+
+
+
+
+
 string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
 {
 
@@ -145,6 +226,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Add_Category => "Add Category",
         MAIN_MENU_OPTIONS.Display_Category_and_Related_Products => "Display Category and related products",
         MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products => "Display all Categories and their related products",
+        MAIN_MENU_OPTIONS.Add_Product => "Add a product",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -155,5 +237,6 @@ public enum MAIN_MENU_OPTIONS
     Display_Categories,
     Add_Category,
     Display_Category_and_Related_Products,
-    Display_All_Categories_and_Their_Related_Products
+    Display_All_Categories_and_Their_Related_Products,
+    Add_Product,
 }
