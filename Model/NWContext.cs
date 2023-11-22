@@ -34,6 +34,12 @@ namespace NWConsole.Model
             this.Products.Add(product);
             this.SaveChanges();
         }
+        public void AddCategory(Category category)
+        {
+            this.Categories.Add(category);
+            this.SaveChanges();
+        }
+        
 
 
 

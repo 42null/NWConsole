@@ -56,20 +56,19 @@ try
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category))
         {
-            Category category = new Category();
-            Console.WriteLine("Enter Category Name:");
-            category.CategoryName = Console.ReadLine();
-            Console.WriteLine("Enter the Category Description:");
-            category.Description = Console.ReadLine();
-            // TODO: save category to db
-            ValidationContext context = new ValidationContext(category, null, null);
+            string newCategoryName = UserInteractions.UserCreatedStringObtainer("Please enter the name of the new category", 1, false, false);
+            Category newCategory = new(){
+                CategoryName = newCategoryName,
+                Description = UserInteractions.UserCreatedStringObtainer($"Please enter the description of the new category \"{newCategoryName}\"", 1, false, false),
+            };
+            ValidationContext context = new ValidationContext(newCategory, null, null);
             List<ValidationResult> results = new List<ValidationResult>();
 
-            var isValid = Validator.TryValidateObject(category, context, results, true);
+            var isValid = Validator.TryValidateObject(newCategory, context, results, true);
             if (isValid)
             {
                // check for unique name
-                if (db.Categories.Any(c => c.CategoryName == category.CategoryName))
+                if (db.Categories.Any(c => c.CategoryName == newCategory.CategoryName))
                 {
                     // generate validation error
                     isValid = false;
@@ -78,7 +77,8 @@ try
                 else
                 {
                     logger.Info("Validation passed");
-                    // TODO: save category to db
+                    db.AddCategory(newCategory);
+                    logger.Info($"Category \"{newCategory.CategoryName}\" added.");
                 }
             }
             if (!isValid)
@@ -130,7 +130,7 @@ try
                 Discontinued = false, //New products should not start as discontinued
                 // product.QuantityPerUnit = UserInteractions.UserCreatedIntObtainer("Please enter how many there are per unit", 1, int.MaxValue, false).ToString();
                 QuantityPerUnit = UserInteractions.UserCreatedStringObtainer("Please enter how many there are per unit", 1, false, false),
-                // QuantityPerUnit
+                UnitPrice = (decimal) UserInteractions.UserCreatedDoubleObtainer("Please enter the unit price per unit", 0, double.MaxValue, false, 0D, 2),
             };
 
             ValidationContext context = new ValidationContext(product, null, null);
@@ -152,6 +152,7 @@ try
                     db.AddProduct(product);
                     logger.Info($"Product added to category \"{product.Category.CategoryName}\" - {product.ProductName}");
                 }
+                // TODO: Add check for category?
             }
             if (!isValid)
             {

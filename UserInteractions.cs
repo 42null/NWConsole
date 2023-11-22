@@ -163,10 +163,11 @@ public sealed class UserInteractions
         return userCreatedIntObtainer(message, minValue, maxValue, showRange, defaultValue.ToString());
     }
     private static int userCreatedIntObtainer(string message, int minValue, int maxValue, bool showRange, string defaultValue)
-    {//=""){
-        string userInputRaw = null;
+    {
+        string userInputRaw;
         int userChosenInteger;
         int defaultAsInt = 0;
+
         if (defaultValue != "" && !int.TryParse(defaultValue, out defaultAsInt))
         {
             loggerWithColors.Error($"Could not use default value of \"{defaultValue}\" as an int. Argument exception error!");
