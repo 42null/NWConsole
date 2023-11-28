@@ -5,8 +5,9 @@ using System.Linq;
 using NWConsole.Model;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
+using NLog.LayoutRenderers;
+using Microsoft.AspNetCore.SignalR.Protocol;
 
 // create instance of Logger
 // NLog.Logger logger = UserInteractions.getLogger();
@@ -22,8 +23,11 @@ logger.Info("Program started");
 string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Product),
+
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product),
+
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
 
 try
@@ -57,7 +61,8 @@ try
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category))
         {
             string newCategoryName = UserInteractions.UserCreatedStringObtainer("Please enter the name of the new category", 1, false, false);
-            Category newCategory = new(){
+            Category newCategory = new()
+            {
                 CategoryName = newCategoryName,
                 Description = UserInteractions.UserCreatedStringObtainer($"Please enter the description of the new category \"{newCategoryName}\"", 1, false, false),
             };
@@ -67,7 +72,7 @@ try
             var isValid = Validator.TryValidateObject(newCategory, context, results, true);
             if (isValid)
             {
-               // check for unique name
+                // check for unique name
                 if (db.Categories.Any(c => c.CategoryName == newCategory.CategoryName))
                 {
                     // generate validation error
@@ -89,7 +94,8 @@ try
                 }
             }
         }
-        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products)){
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products))
+        {
             var query = db.Categories.OrderBy(p => p.CategoryId);
 
             Console.WriteLine("Select the category whose products you want to display:");
@@ -121,6 +127,31 @@ try
                 }
             }
         }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Product))
+        {
+            String[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
+            string locateMethod = UserInteractions.OptionsSelector(locateProductOptions, true);
+
+            IQueryable<Product> products;
+            if (locateMethod == locateProductOptions[0])
+            {
+                Category productCategory = selectCategory("Please select the product's category");
+                products = db.Products.Where(p => p.CategoryId == productCategory.CategoryId);
+            }else if(locateMethod == locateProductOptions[1]){
+                string userInput = UserInteractions.UserCreatedStringObtainer("Please enter the search name of your product", 1, false, false);
+                products = db.Products.Where(p => p.ProductName.Contains(userInput));
+            }else{
+                string userInput = UserInteractions.UserCreatedIntObtainer("Please enter the id to search for your product", db.Products.Min(p => p.ProductId), db.Products.Max(p => p.ProductId), true).ToString();//TODO: Combine min & max to be more efficient and do beforehand to avoid re-computing
+                products = db.Products.Where(p => p.ProductId.ToString().Contains(userInput));
+            }
+            
+            
+            // String[] productNames = products.Select(p => p.ProductName).ToArray();
+            Product selectedProduct = selectProduct("Pick the product you wish to access", products);
+
+            // Console.WriteLine("");
+            displayProduct(selectedProduct);
+        }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product))
         {
             Product product = new Product
@@ -130,7 +161,7 @@ try
                 Discontinued = false, //New products should not start as discontinued
                 // product.QuantityPerUnit = UserInteractions.UserCreatedIntObtainer("Please enter how many there are per unit", 1, int.MaxValue, false).ToString();
                 QuantityPerUnit = UserInteractions.UserCreatedStringObtainer("Please enter how many there are per unit", 1, false, false),
-                UnitPrice = (decimal) UserInteractions.UserCreatedDoubleObtainer("Please enter the unit price per unit", 0, double.MaxValue, false, 0D, 2),
+                UnitPrice = (decimal)UserInteractions.UserCreatedDoubleObtainer("Please enter the unit price per unit", 0, double.MaxValue, false, 0D, 2),
             };
 
             ValidationContext context = new ValidationContext(product, null, null);
@@ -139,7 +170,7 @@ try
             var isValid = Validator.TryValidateObject(product, context, results, true);
             if (isValid)
             {
-               // check for unique name
+                // check for unique name
                 if (db.Products.Any(r => r.ProductName == product.ProductName))
                 {
                     // generate validation error
@@ -179,42 +210,97 @@ logger.Info("Program ended");
 
 
 
-Category selectCategory(string selectionMessage){
+
+
+Category selectCategory(string selectionMessage)
+{
     var db = new NWContext();
     var all = db.Categories.OrderBy(r => r.CategoryName).ToArray();
     string[] allKeys = new string[all.Count()];
-    for(int i = 0; i < allKeys.Length; i++){ allKeys[i] = all[i].CategoryName; }
+    for (int i = 0; i < allKeys.Length; i++) { allKeys[i] = all[i].CategoryName; }
     string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
-    foreach(var record in all)
+    foreach (var record in all)
     {
-        if(record.CategoryName == selectedNameKey){
-            return record;
-        }
-    }
-    throw new ArgumentException();
-}
-Product selectProduct(string selectionMessage){
-    var db = new NWContext();
-    var all = db.Products.OrderBy(r => r.ProductName).ToArray();
-    string[] allKeys = new string[all.Count()];
-    for(int i = 0; i < allKeys.Length; i++){ allKeys[i] = all[i].ProductName; }
-    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
-    foreach(var record in all)
-    {
-        if(record.ProductName == selectedNameKey){
+        if (record.CategoryName == selectedNameKey)
+        {
             return record;
         }
     }
     throw new ArgumentException();
 }
 
+Product selectProduct(string selectionMessage, IQueryable<Product> products = null)
+{
+    if (products == null)
+    {
+        products = new NWContext().Products.OrderBy(r => r.ProductName);
+    }
+    var selectableProducts = products.ToArray();
+    string[] allKeys = new string[selectableProducts.Count()];
+    for (int i = 0; i < allKeys.Length; i++) { allKeys[i] = selectableProducts[i].ProductName; }
+    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
+    foreach (var record in selectableProducts)
+    {
+        if (record.ProductName == selectedNameKey)
+        {
+            return record;
+        }
+    }
+    throw new ArgumentException();
+}
 
 
+void displayProduct(Product product)
+{
 
+    // Console.WriteLine($"{product.Category.CategoryName}");//Crashes for some reason
+    // Replace "QuantityPerUnit" with the longest string to be used.
+    int indentLevel = "Quantity Per Unit".Length;
 
+    displayField("Name", product.ProductName, indentLevel, false);//string
+    displayField("Id", product.ProductId, indentLevel, false);//int
+    displayField("Supplier Id", product.SupplierId, indentLevel, false);//int?
+    displayField("Category Id", product.CategoryId, indentLevel, false);//int?
+    displayField("Quantity Per Unit", product.QuantityPerUnit, indentLevel, false);//string
+    displayField("Unit Price ($)", product.UnitPrice, indentLevel, false);//decimal?
+    displayField("Units In Stock", product.UnitsInStock, indentLevel, false);//short?
+    displayField("Units On Order", product.UnitsOnOrder, indentLevel, false);//short?
+    displayField("Reorder Level", product.ReorderLevel, indentLevel, false);//short?
+    displayField("Discontinued", product.Discontinued, indentLevel, false);//bool
 
+    // public virtual Category Category { get; set; }
+    // public virtual Supplier Supplier { get; set; }
+    // public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+}
 
+void displayField<T>(string recordName, T recordValue, int indentLevel, bool blankIfNull)
+{
+    if(indentLevel == -1){
+        indentLevel = 0;
+    }
+    ConsoleColor existingColor = Console.ForegroundColor;
 
+    Console.ForegroundColor = UserInteractions.displayColor;
+    Console.ForegroundColor = UserInteractions.defaultColor;
+    // string labelLine = $"{recordName.PadRight(indentLevel)}";
+    string labelLine = $"{recordName}";
+    while(recordName.Length < indentLevel){
+        labelLine += UserInteractions.formattingRowLineHelper;
+    }
+
+    Console.Write($"{labelLine}:");
+    Console.ForegroundColor = UserInteractions.defaultColor;
+
+    if (recordValue == null)
+    {
+        Console.WriteLine();
+    }
+    else
+    {
+        Console.Write($" {recordValue}\n");//TODO: Space consistency between?
+    }
+    Console.ForegroundColor = existingColor;
+}
 
 
 string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
@@ -228,6 +314,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Display_Category_and_Related_Products => "Display Category and related products",
         MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products => "Display all Categories and their related products",
         MAIN_MENU_OPTIONS.Add_Product => "Add a product",
+        MAIN_MENU_OPTIONS.DisplayEdit_Product => "Display/Edit a specific product",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -240,4 +327,5 @@ public enum MAIN_MENU_OPTIONS
     Display_Category_and_Related_Products,
     Display_All_Categories_and_Their_Related_Products,
     Add_Product,
+    DisplayEdit_Product
 }

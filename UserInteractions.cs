@@ -1,18 +1,21 @@
 using System.Reflection.Metadata;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Routing.Constraints;
+using Microsoft.JSInterop.Infrastructure;
 using NLog;
 /**
     UserInteractions is a class to assist in getting input from the user (and sometimes displaying information) in other to standardize common requests
 */
 public sealed class UserInteractions
 { //Sealed to prevent inheritance
-    public const int PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT = 1_000; //Tested, >~ 1,000 line before removal, use int.MaxValue for infinity, int's length is max for used lists    
+    public const int PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT = 1_000; //Tested, >~ 1,000 line before removal, use int.MaxValue for infinity, int's length is max for used lists
+    public const char formattingRowLineHelper = '-';
     static LoggerWithColors loggerWithColors = new LoggerWithColors();
 
 
     public static ConsoleColor defaultColor = ConsoleColor.White;
     public static ConsoleColor userColor = ConsoleColor.Yellow;
+    public static ConsoleColor seperatorColor = defaultColor;
 
     public static ConsoleColor infoColor = ConsoleColor.Cyan;
     public static ConsoleColor resultsColor = ConsoleColor.Green;
@@ -78,6 +81,7 @@ public sealed class UserInteractions
                     Console.Write(beforeWord);
 
                     string firstWord = line.Substring(firstSpaceIndex,afterFirstIndex);
+                    Boolean firstWordShown = false;
                     if(firstWord.ToLower() == "display"){
                         Console.ForegroundColor = displayColor;
                     }else if(firstWord.ToLower() == "add"){
@@ -86,13 +90,23 @@ public sealed class UserInteractions
                         Console.ForegroundColor = editColor;
                     }else if(firstWord.ToLower() == "delete" || firstWord.ToLower() == "remove"){
                         Console.ForegroundColor = removeColor;
+
+                    }else if(firstWord.Contains('/')){//TODO: Improve processing
+                        int indexOfSeparator = firstWord.IndexOf('/');
+                        Console.ForegroundColor = displayColor;
+                        Console.Write($"{firstWord.Substring(0,indexOfSeparator)}");
+                        Console.ForegroundColor = seperatorColor;
+                        Console.Write("/");
+                        Console.ForegroundColor = editColor;
+                        Console.Write($"{firstWord.Substring(indexOfSeparator+1)}");
+                        Console.ForegroundColor = defaultColor;
+                        firstWordShown = true;
                     }
 
-                    Console.Write(firstWord);
+                    if(!firstWordShown){ Console.Write(firstWord); }
 
                     Console.ForegroundColor = existingColor;
                     Console.WriteLine(line.Substring(firstSpaceIndex+afterFirstIndex));
-
                 }
             }else{
                 Console.WriteLine(optionsTextAsStr);
