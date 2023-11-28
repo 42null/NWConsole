@@ -16,6 +16,9 @@ public sealed class UserInteractions
     public static ConsoleColor defaultColor = ConsoleColor.White;
     public static ConsoleColor userColor = ConsoleColor.Yellow;
     public static ConsoleColor seperatorColor = defaultColor;
+    public static ConsoleColor selectDefaultOptionColor = ConsoleColor.Black;
+    public static ConsoleColor selectDefaultOptionColorBackground = ConsoleColor.Gray;
+
 
     public static ConsoleColor infoColor = ConsoleColor.Cyan;
     public static ConsoleColor resultsColor = ConsoleColor.Green;
@@ -146,9 +149,7 @@ public sealed class UserInteractions
         do
         {
             Console.Write($"\n{message}{(showMinimum ? $" (must contain at least {minimumCharactersAllowed} character{(minimumCharactersAllowed == 1 ? "" : "s")})" : "")}: ");
-            Console.ForegroundColor = userColor;
-            userInput = Console.ReadLine().ToString();
-            Console.ForegroundColor = defaultColor;
+            userInput = getInputWithColor();
             if (!keepRaw)
             {
                 userInput = userInput.Trim();
@@ -167,6 +168,43 @@ public sealed class UserInteractions
 
         return userInput;
     }
+
+    // public static bool UserCreatedContinueObtainer(string message){
+    //     return UserCreatedBooleanObtainer;
+    // }
+
+    public static bool UserCreatedBooleanObtainer(string message, bool defaultValue){
+        string lowercaseOptionTrue = "y";
+        string lowercaseOptionFalse = "n";
+
+        ConsoleColor startingBackground = Console.BackgroundColor;
+
+        // Console.Write($"\n{message}? ({(defaultValue?$"{lowercaseOptionTrue.ToUpper()}":$"{lowercaseOptionTrue}")}/{(defaultValue?$"{lowercaseOptionFalse}":$"{lowercaseOptionFalse.ToUpper()}")}): ");
+        Console.Write($"\n{message}? (");
+        if(defaultValue){
+            Console.BackgroundColor = selectDefaultOptionColorBackground;
+            Console.ForegroundColor = selectDefaultOptionColor;
+            Console.Write($"{lowercaseOptionTrue.ToUpper()}");
+            Console.ForegroundColor = defaultColor;
+            Console.BackgroundColor = startingBackground;
+        }else{
+            Console.Write($"{lowercaseOptionTrue}");
+        }
+        Console.Write($"/");
+        if(!defaultValue){
+            Console.BackgroundColor = selectDefaultOptionColorBackground;
+            Console.ForegroundColor = selectDefaultOptionColor;
+            Console.Write($"{lowercaseOptionFalse.ToUpper()}");
+            Console.ForegroundColor = defaultColor;
+            Console.BackgroundColor = startingBackground;
+        }else{
+            Console.Write($"{lowercaseOptionFalse}");
+        }
+        Console.Write("): ");
+
+        return getInputWithColor().Trim().ToLower().Equals(lowercaseOptionTrue);
+    }
+
 
     public static int UserCreatedIntObtainer(string message, int minValue, int maxValue, bool showRange)
     {
@@ -351,6 +389,14 @@ public sealed class UserInteractions
         return selectedOptions.ToArray();
     }
 
+
+
+    private static string getInputWithColor(){
+        Console.ForegroundColor = userColor;
+        string enteredValue = Console.ReadLine().ToString();
+        Console.ForegroundColor = defaultColor;   
+        return enteredValue;
+    }
 
     public static void messageAlert(string message)
     {

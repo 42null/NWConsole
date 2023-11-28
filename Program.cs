@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using NLog.LayoutRenderers;
 using Microsoft.AspNetCore.SignalR.Protocol;
+using System.Reflection.Metadata;
 
 // create instance of Logger
 // NLog.Logger logger = UserInteractions.getLogger();
@@ -148,9 +149,76 @@ try
             
             // String[] productNames = products.Select(p => p.ProductName).ToArray();
             Product selectedProduct = selectProduct("Pick the product you wish to access", products);
-
             // Console.WriteLine("");
             displayProduct(selectedProduct);
+
+            if(UserInteractions.UserCreatedBooleanObtainer("Edit this product", false)){
+                do{
+                    //TODO: Add field data during picking?
+                    String[] productFieldOptions = new string[]{"Name","Id","Supplier Id","Category Id","Quantity Per Unit","Unit Price ","Units In Stock","Units On Order","Reorder Level","Discontinued"};
+                    String[] productFields = new string[]{"ProductId","ProductName","SupplierId","CategoryId","QuantityPerUnit","UnitPrice","UnitsInStock","UnitsOnOrder","ReorderLevel","Discontinued"};
+
+                    // selectedProduct.GetType().GetProperty("ProductId").SetValue(selectedProduct, (int) "test", null);
+                    // selectedProduct.GetType().GetProperty("ProductName").SetValue(selectedProduct, (string) "test", null);
+                    // selectedProduct.GetType().GetProperty("SupplierId").SetValue(selectedProduct, (int?) "test", null);
+                    // selectedProduct.GetType().GetProperty("CategoryId").SetValue(selectedProduct, (int?) "test", null);
+                    // selectedProduct.GetType().GetProperty("QuantityPerUnit").SetValue(selectedProduct, (string) "test", null);
+                    // selectedProduct.GetType().GetProperty("UnitPrice").SetValue(selectedProduct, (decimal?) "test", null);
+                    // selectedProduct.GetType().GetProperty("UnitsInStock").SetValue(selectedProduct, (short?) "test", null);
+                    // selectedProduct.GetType().GetProperty("UnitsOnOrder").SetValue(selectedProduct, (short?) "test", null);
+                    // selectedProduct.GetType().GetProperty("ReorderLevel").SetValue(selectedProduct, (short?) "test", null);
+                    // selectedProduct.GetType().GetProperty("Discontinued").SetValue(selectedProduct, (bool) "test", null);
+                    // UserInteractions.OptionsSelector(productFieldOptions);
+                    
+                    string selectedField = UserInteractions.OptionsSelector(productFieldOptions);
+                    int selectedFieldIndex = Array.IndexOf(productFieldOptions, selectedField);
+                    string selectedFieldUse = productFields[selectedFieldIndex];
+
+                    switch (selectedField)
+                    {
+                        // product.GetType().GetProperty("UnitsInStock").SetValue(product, 10, null);
+                        // TODO: MUST HAVE VALIDATION!!!!!
+                        case "Name":
+                        case "Quantity Per Unit":
+                            string newValueString = UserInteractions.UserCreatedStringObtainer($"Please enter a new value for \"{selectedField}\"", 1, false, false);
+                            selectedProduct.GetType().GetProperty(selectedFieldUse).SetValue(selectedProduct, newValueString, null);
+                            break;
+                        case "ProductId":
+                            int newValueInt = UserInteractions.UserCreatedIntObtainer($"Please enter a new value for \"{selectedField}\"",0,int.MaxValue,false );
+                            selectedProduct.GetType().GetProperty(selectedFieldUse).SetValue(selectedProduct, newValueInt, null);
+                            break;
+                        case "Supplier Id":
+                            // Can be null
+                            Supplier? choosenSupplier = selectSupplier("Please select a the new supplier, (or pick none if desired)", null, true);
+                            int? newValueSupplierIdOrNull;
+                            if(choosenSupplier == null){
+                                newValueSupplierIdOrNull = null;
+                            }else{
+                                newValueSupplierIdOrNull = choosenSupplier.SupplierId;
+                            }
+                            selectedProduct.GetType().GetProperty("SupplierId").SetValue(selectedProduct, newValueSupplierIdOrNull, null);
+                            break;
+                        case "Category Id":
+                            // Can be null
+
+                            break;
+                        case "Unit Price":
+                            break;
+                        case "Units In Stock":
+                        case "Units On Order":
+                        case "Reorder Level":
+                            break;
+                        case "Discontinued":
+                            break;
+                        default:
+                            break;
+                        }
+                        db.SaveChanges();
+                    displayProduct(selectedProduct);
+                }while(UserInteractions.UserCreatedBooleanObtainer("Continue editing fields", false));
+            }
+            displayProduct(selectedProduct);
+
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product))
         {
@@ -229,7 +297,7 @@ Category selectCategory(string selectionMessage)
     throw new ArgumentException();
 }
 
-Product selectProduct(string selectionMessage, IQueryable<Product> products = null)
+Product selectProduct(string selectionMessage, IQueryable<Product> products, bool showCategories = false)
 {
     if (products == null)
     {
@@ -247,6 +315,52 @@ Product selectProduct(string selectionMessage, IQueryable<Product> products = nu
         }
     }
     throw new ArgumentException();
+}
+
+
+Supplier? selectSupplier(string selectionMessage, IQueryable<Supplier> suppliers, bool addNone)
+{
+    string noSupplierCompanyName = "(None) NO SUPPLIER";
+    if (suppliers == null)
+    {
+        suppliers = new NWContext().Suppliers.OrderBy(s => s.CompanyName);
+    }
+    // if(addNone){
+    //     Supplier tempNoneSupplier = new Supplier
+    //     {
+    //         CompanyName = noSupplierCompanyName
+    //     };
+    //     // suppliers = suppliers.Prepend(tempNoneSupplier);
+    // }
+    
+    Supplier[] selectableSuppliers = suppliers.ToArray();
+
+    if(addNone){
+        Supplier[] selectableSuppliersWithNone = new Supplier[suppliers.Count()+1];
+        for(int i = 0; i < selectableSuppliers.Length; i++)
+        {
+            selectableSuppliersWithNone[i+1] = selectableSuppliers[i];
+        }
+        selectableSuppliersWithNone[0] = new Supplier{ CompanyName = noSupplierCompanyName };
+
+        selectableSuppliers = selectableSuppliersWithNone;
+    }
+
+    string[] allKeys = new string[selectableSuppliers.Count()];
+    for (int i = 0; i < allKeys.Length; i++) { allKeys[i] = selectableSuppliers[i].CompanyName; }
+    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
+    foreach (var record in selectableSuppliers)
+    {
+        if (record.CompanyName == selectedNameKey)
+        {
+            if(string.Equals(selectedNameKey, noSupplierCompanyName)){
+                return null;
+            }else{
+                return record;
+            }
+        }
+    }
+    return null;
 }
 
 
@@ -281,13 +395,11 @@ void displayField<T>(string recordName, T recordValue, int indentLevel, bool bla
     ConsoleColor existingColor = Console.ForegroundColor;
 
     Console.ForegroundColor = UserInteractions.displayColor;
-    Console.ForegroundColor = UserInteractions.defaultColor;
     // string labelLine = $"{recordName.PadRight(indentLevel)}";
     string labelLine = $"{recordName}";
-    while(recordName.Length < indentLevel){
+    while(labelLine.Length < indentLevel){
         labelLine += UserInteractions.formattingRowLineHelper;
     }
-
     Console.Write($"{labelLine}:");
     Console.ForegroundColor = UserInteractions.defaultColor;
 
