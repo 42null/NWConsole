@@ -164,8 +164,14 @@ try
                     Type selectedProductType = selectedProduct.GetType();
 
                     logger.Info($"User selected product field \"{selectedField}\"");
-                    string existingValue = selectedProduct.GetType().GetProperty(selectedFieldProperty).GetValue(selectedProduct, null).ToString();
-                    Console.WriteLine($"The current \"{selectedField}\" is ${existingValue}");//TODO: Add colors
+                    var existingValueOrNull = selectedProduct.GetType().GetProperty(selectedFieldProperty).GetValue(selectedProduct, null);
+                    string existingValue;
+                    if(existingValueOrNull == null){
+                        existingValue = "<not set>";//TODO: Add color
+                    }else{
+                        existingValue = existingValueOrNull.ToString();
+                    }
+                    Console.WriteLine($"The current \"{selectedField}\" is \"${existingValue}\"");//TODO: Add colors
 
                     switch(selectedField)
                     {
@@ -202,14 +208,11 @@ try
                             selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueCategoryIdOrNull, null);
                             break;
                         case "Unit Price":
-                            Console.WriteLine("!!!");
                             decimal? newValueDecimal = (decimal?) UserInteractions.UserCreatedDoubleObtainer($"Please enter a new value for \"{selectedField}\". Any value less than 0 will clear it", double.MinValue, double.MaxValue, false);
                             if(newValueDecimal < 0){
                                 newValueDecimal = null;
                             }
-                            Console.WriteLine("!!!");
                             selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueDecimal, null);
-                            Console.WriteLine("!!!");
                             break;
                         case "Units In Stock":
                         case "Units On Order":
@@ -427,7 +430,7 @@ void displayProduct(Product product)
     displayField("Supplier Id", product.SupplierId, indentLevel, false);//int?
     displayField("Category Id", product.CategoryId, indentLevel, false);//int?
     displayField("Quantity Per Unit", product.QuantityPerUnit, indentLevel, false);//string
-    displayField("Unit Price ($)", product.UnitPrice, indentLevel, false);//decimal?
+    displayField("Unit Price ($)", product.UnitPrice, indentLevel, false, 2);//decimal?
     displayField("Units In Stock", product.UnitsInStock, indentLevel, false);//short?
     displayField("Units On Order", product.UnitsOnOrder, indentLevel, false);//short?
     displayField("Reorder Level", product.ReorderLevel, indentLevel, false);//short?
@@ -438,10 +441,14 @@ void displayProduct(Product product)
     // public virtual ICollection<OrderDetail> OrderDetails { get; set; }
 }
 
-void displayField<T>(string recordName, T recordValue, int indentLevel, bool blankIfNull)
+void displayField<T>(string recordName, T recordValue, int indentLevel, bool blankIfNull, int decimalPlaces = -1)
 {
     if(indentLevel == -1){
         indentLevel = 0;
+    }
+    if(decimalPlaces < -1){
+        logger.Warn("Display field decimal spaces should not be lower than -1. Argument problem caught before error. Handling...");
+        decimalPlaces = -1;
     }
     ConsoleColor existingColor = Console.ForegroundColor;
 
@@ -460,7 +467,14 @@ void displayField<T>(string recordName, T recordValue, int indentLevel, bool bla
     }
     else
     {
-        Console.Write($" {recordValue}\n");//TODO: Space consistency between?
+        if(recordValue is decimal && decimalPlaces != -1){
+            string formattedValue = string.Format("{0:F"+decimalPlaces+"}", recordValue);//TODO: Make with with currencies instead of just floating points
+            Console.Write($" {formattedValue}\n");
+        }
+        else
+        {
+            Console.Write($" {recordValue}\n");//TODO: Space consistency between?
+        }
     }
     Console.ForegroundColor = existingColor;
 }
