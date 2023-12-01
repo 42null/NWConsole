@@ -201,8 +201,8 @@ public sealed class UserInteractions
             Console.Write($"{lowercaseOptionFalse}");
         }
         Console.Write("): ");
-
-        return getInputWithColor().Trim().ToLower().Equals(lowercaseOptionTrue);
+        string userInput = getInputWithColor().Trim().ToLower();
+        return userInput.Equals(lowercaseOptionTrue) || (userInput.Length==0?defaultValue:false);
     }
 
 

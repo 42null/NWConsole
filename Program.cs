@@ -155,37 +155,29 @@ try
             if(UserInteractions.UserCreatedBooleanObtainer("Edit this product", false)){
                 do{
                     //TODO: Add field data during picking?
-                    String[] productFieldOptions = new string[]{"Name","Id","Supplier Id","Category Id","Quantity Per Unit","Unit Price ","Units In Stock","Units On Order","Reorder Level","Discontinued"};
-                    String[] productFields = new string[]{"ProductId","ProductName","SupplierId","CategoryId","QuantityPerUnit","UnitPrice","UnitsInStock","UnitsOnOrder","ReorderLevel","Discontinued"};
+                    String[] productFieldOptions = new string[]{"Name","Product Id","Supplier Id","Category Id","Quantity Per Unit","Unit Price","Units In Stock","Units On Order","Reorder Level","Discontinued"};
+                    String[] productFields = new string[]{"ProductName","ProductId","SupplierId","CategoryId","QuantityPerUnit","UnitPrice","UnitsInStock","UnitsOnOrder","ReorderLevel","Discontinued"};
 
-                    // selectedProduct.GetType().GetProperty("ProductId").SetValue(selectedProduct, (int) "test", null);
-                    // selectedProduct.GetType().GetProperty("ProductName").SetValue(selectedProduct, (string) "test", null);
-                    // selectedProduct.GetType().GetProperty("SupplierId").SetValue(selectedProduct, (int?) "test", null);
-                    // selectedProduct.GetType().GetProperty("CategoryId").SetValue(selectedProduct, (int?) "test", null);
-                    // selectedProduct.GetType().GetProperty("QuantityPerUnit").SetValue(selectedProduct, (string) "test", null);
-                    // selectedProduct.GetType().GetProperty("UnitPrice").SetValue(selectedProduct, (decimal?) "test", null);
-                    // selectedProduct.GetType().GetProperty("UnitsInStock").SetValue(selectedProduct, (short?) "test", null);
-                    // selectedProduct.GetType().GetProperty("UnitsOnOrder").SetValue(selectedProduct, (short?) "test", null);
-                    // selectedProduct.GetType().GetProperty("ReorderLevel").SetValue(selectedProduct, (short?) "test", null);
-                    // selectedProduct.GetType().GetProperty("Discontinued").SetValue(selectedProduct, (bool) "test", null);
-                    // UserInteractions.OptionsSelector(productFieldOptions);
-                    
                     string selectedField = UserInteractions.OptionsSelector(productFieldOptions);
                     int selectedFieldIndex = Array.IndexOf(productFieldOptions, selectedField);
-                    string selectedFieldUse = productFields[selectedFieldIndex];
+                    string selectedFieldProperty = productFields[selectedFieldIndex];
+                    Type selectedProductType = selectedProduct.GetType();
 
-                    switch (selectedField)
+                    logger.Info($"User selected product field \"{selectedField}\"");
+                    string existingValue = selectedProduct.GetType().GetProperty(selectedFieldProperty).GetValue(selectedProduct, null).ToString();
+                    Console.WriteLine($"The current \"{selectedField}\" is ${existingValue}");//TODO: Add colors
+
+                    switch(selectedField)
                     {
-                        // product.GetType().GetProperty("UnitsInStock").SetValue(product, 10, null);
                         // TODO: MUST HAVE VALIDATION!!!!!
                         case "Name":
                         case "Quantity Per Unit":
                             string newValueString = UserInteractions.UserCreatedStringObtainer($"Please enter a new value for \"{selectedField}\"", 1, false, false);
-                            selectedProduct.GetType().GetProperty(selectedFieldUse).SetValue(selectedProduct, newValueString, null);
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueString, null);
                             break;
                         case "ProductId":
                             int newValueInt = UserInteractions.UserCreatedIntObtainer($"Please enter a new value for \"{selectedField}\"",0,int.MaxValue,false );
-                            selectedProduct.GetType().GetProperty(selectedFieldUse).SetValue(selectedProduct, newValueInt, null);
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueInt, null);
                             break;
                         case "Supplier Id":
                             // Can be null
@@ -196,26 +188,49 @@ try
                             }else{
                                 newValueSupplierIdOrNull = choosenSupplier.SupplierId;
                             }
-                            selectedProduct.GetType().GetProperty("SupplierId").SetValue(selectedProduct, newValueSupplierIdOrNull, null);
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueSupplierIdOrNull, null);
                             break;
                         case "Category Id":
                             // Can be null
-
+                            Category? choosenCategory = selectCategoryNull("Please select a the new category, (or pick none if desired)", null, true);
+                            int? newValueCategoryIdOrNull;
+                            if(choosenCategory == null){
+                                newValueCategoryIdOrNull = null;
+                            }else{
+                                newValueCategoryIdOrNull = choosenCategory.CategoryId;
+                            }
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueCategoryIdOrNull, null);
                             break;
                         case "Unit Price":
+                            Console.WriteLine("!!!");
+                            decimal? newValueDecimal = (decimal?) UserInteractions.UserCreatedDoubleObtainer($"Please enter a new value for \"{selectedField}\". Any value less than 0 will clear it", double.MinValue, double.MaxValue, false);
+                            if(newValueDecimal < 0){
+                                newValueDecimal = null;
+                            }
+                            Console.WriteLine("!!!");
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueDecimal, null);
+                            Console.WriteLine("!!!");
                             break;
                         case "Units In Stock":
                         case "Units On Order":
                         case "Reorder Level":
+                            short? newValueShort = (short) UserInteractions.UserCreatedIntObtainer($"Please enter a new value for \"{selectedField}\". Any value less than 0 will clear it",0,(int) short.MaxValue,false);
+                            if(newValueShort < 0){
+                                newValueDecimal = null;
+                            }
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueShort, null);
                             break;
                         case "Discontinued":
+                            bool newValueDiscontinued = UserInteractions.UserCreatedBooleanObtainer($"Pease enter if this product should be discontinued", false);
+                            selectedProductType.GetProperty(selectedFieldProperty).SetValue(selectedProduct, newValueDiscontinued, null);
                             break;
                         default:
                             break;
-                        }
-                        db.SaveChanges();
+                    }
+                    db.SaveChanges();
+
                     displayProduct(selectedProduct);
-                }while(UserInteractions.UserCreatedBooleanObtainer("Continue editing fields", false));
+                }while(UserInteractions.UserCreatedBooleanObtainer("Continue editing fields", true));
             }
             displayProduct(selectedProduct);
 
@@ -363,6 +378,42 @@ Supplier? selectSupplier(string selectionMessage, IQueryable<Supplier> suppliers
     return null;
 }
 
+Category? selectCategoryNull(string selectionMessage, IQueryable<Category> categories, bool addNone)
+{
+    string noCategoryName = "(None) NO CATEGORY";
+    if (categories == null)
+    {
+        categories = new NWContext().Categories.OrderBy(c => c.CategoryName);
+    }
+    Category[] selectableCategories = categories.ToArray();
+
+    if(addNone){
+        Category[] selectableSuppliersWithNone = new Category[categories.Count()+1];
+        for(int i = 0; i < selectableCategories.Length; i++)
+        {
+            selectableSuppliersWithNone[i+1] = selectableCategories[i];
+        }
+        selectableSuppliersWithNone[0] = new Category{ CategoryName = noCategoryName };
+
+        selectableCategories = selectableSuppliersWithNone;
+    }
+
+    string[] allKeys = new string[selectableCategories.Count()];
+    for (int i = 0; i < allKeys.Length; i++) { allKeys[i] = selectableCategories[i].CategoryName; }
+    string selectedNameKey = UserInteractions.OptionsSelector(allKeys, selectionMessage);
+    foreach (var record in selectableCategories)
+    {
+        if (record.CategoryName == selectedNameKey)
+        {
+            if(string.Equals(selectedNameKey, noCategoryName)){
+                return null;
+            }else{
+                return record;
+            }
+        }
+    }
+    return null;
+}
 
 void displayProduct(Product product)
 {
