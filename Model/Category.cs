@@ -14,6 +14,7 @@ namespace NWConsole.Model
         public int CategoryId { get; set; }
         [Required(ErrorMessage = "YO - Enter the name!")]
         public string CategoryName { get; set; }
+        [Required(ErrorMessage = "Don't forget to add a description")] // Should never be triggered, minimum requirements are protected in creation
         public string Description { get; set; }
 
         public virtual ICollection<Product> Products { get; set; }

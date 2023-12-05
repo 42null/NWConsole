@@ -62,8 +62,6 @@ try
 
             if(UserInteractions.UserCreatedBooleanObtainer("Would you like to edit a category", false)){
                 Category selectedCategory = selectCategory("Select a category to edit");
-                // products = db.Products.Where(p => p.CategoryId == productCategory.CategoryId);
-                // TODO: MUST VALIDATE NAME
                 Console.Write("Category current name is \"");
                 Console.ForegroundColor = UserInteractions.resultsColor;
                 Console.Write($"{selectedCategory.CategoryName}");

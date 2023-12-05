@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Logging;
 
 namespace NWConsole.Model
 {
@@ -40,14 +41,21 @@ namespace NWConsole.Model
             this.SaveChanges();
         }
         
-        public void EditCategory(Category category, string name, string description){
-            // TODO: VALIDATE VALUES
+        public void EditCategory(Category category, string name, string description, LoggerWithColors logger){
             Category targetCategory = this.Categories.First(c => c.CategoryId == category.CategoryId);
             if(name.Length != 0){
-                targetCategory.CategoryName = name;
+                if(this.Categories.Any(c => c.CategoryName == name)){
+                    logger.Error($"Category name of \"{name}\" already exists and cannot be used again for a name!");
+                }else{
+                    targetCategory.CategoryName = name;
+                }
             }
             if(description.Length != 0){
-                targetCategory.Description = description;
+                if(this.Categories.Any(c => c.Description == description)){
+                    logger.Error($"Category description of \"{name}\" already exists and cannot be used again for a description!");
+                }else{
+                    targetCategory.Description = description;
+                }
             }
             this.SaveChanges();
         }
