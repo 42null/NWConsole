@@ -21,15 +21,17 @@ public sealed class UserInteractions
 
 
     public static ConsoleColor infoColor = ConsoleColor.Cyan;
-    public static ConsoleColor resultsColor = ConsoleColor.Green;
+    public static ConsoleColor resultsColor = ConsoleColor.DarkMagenta; //ConsoleColor.Green
     public static ConsoleColor debugColor = ConsoleColor.Magenta;
     public static ConsoleColor traceColor = ConsoleColor.DarkMagenta;
     public static ConsoleColor warnColor = ConsoleColor.Red; //ConsoleColor.DarkYellow;
     public static ConsoleColor errorColor = ConsoleColor.Red;
     public static ConsoleColor fatalColor = ConsoleColor.DarkRed;
 
+    public static ConsoleColor discontinuedColor = ConsoleColor.DarkGray;
 
-    public static ConsoleColor displayColor = ConsoleColor.DarkMagenta;
+
+    public static ConsoleColor displayColor = resultsColor;
     public static ConsoleColor addColor = ConsoleColor.Blue;
     public static ConsoleColor editColor = ConsoleColor.Green;
     public static ConsoleColor removeColor = ConsoleColor.Red;

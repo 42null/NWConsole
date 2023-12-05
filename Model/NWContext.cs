@@ -40,7 +40,17 @@ namespace NWConsole.Model
             this.SaveChanges();
         }
         
-
+        public void EditCategory(Category category, string name, string description){
+            // TODO: VALIDATE VALUES
+            Category targetCategory = this.Categories.First(c => c.CategoryId == category.CategoryId);
+            if(name.Length != 0){
+                targetCategory.CategoryName = name;
+            }
+            if(description.Length != 0){
+                targetCategory.Description = description;
+            }
+            this.SaveChanges();
+        }
 
 
 
