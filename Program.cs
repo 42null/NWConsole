@@ -21,7 +21,7 @@ logger.Info("Main program is running and log manager is started, program is runn
 logger.Info("Program started");
 
 
-string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories),
+string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Categories),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Category_and_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Product),
@@ -46,7 +46,7 @@ try
         {
             logger.Info("Program quitting...");
         }
-        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_Categories))
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Categories))
         {
             var query = db.Categories.OrderBy(p => p.CategoryName);
 
@@ -115,52 +115,22 @@ try
         {
             var query = db.Categories.OrderBy(p => p.CategoryId);
 
-            Console.WriteLine("Select the category whose products you want to display:");
-            Console.ForegroundColor = UserInteractions.resultsColor;
-            foreach (var item in query)
-            {
-                Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
-            }
-            Console.ForegroundColor = ConsoleColor.White;
-            int id = int.Parse(Console.ReadLine());
+            Category selectedCategory = selectCategory("Select the category whose products you want to display:");
             Console.Clear();
-            logger.Info($"CategoryId {id} selected");
-            Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id);
+            logger.Info($"CategoryId {selectedCategory.CategoryId} selected");
+            Console.WriteLine();
+            Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == selectedCategory.CategoryId);
             Console.WriteLine($"{category.CategoryName} - {category.Description}");
-            foreach (Product p in category.Products)
-            {
-                Console.WriteLine($"\t{p.ProductName}");
-            }
+            displayCategoryProductsActives(db.Categories.Where(c => c.CategoryId == category.CategoryId).OrderBy(p => p.CategoryId));
+
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products))
         {
-            String[] productFilteringOptions = { "All products", "Discontinued products", "Active products" };
-            string selectedProductFilter = UserInteractions.OptionsSelector(productFilteringOptions, true);
-
-            var queryAllCategories = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
-
-            foreach (Category category in queryAllCategories)
-            {
-                Console.ForegroundColor = UserInteractions.resultsColor;
-                Console.WriteLine($"\n{category.CategoryName}");
-                foreach (Product product in category.Products)
-                {
-                    bool discontinued = product.Discontinued;
-                    if(discontinued && (selectedProductFilter == productFilteringOptions[0] || selectedProductFilter == productFilteringOptions[1])){
-                        Console.ForegroundColor = UserInteractions.discontinuedColor;
-                        Console.WriteLine($"\t{product.ProductName}");
-                    }else if(selectedProductFilter == productFilteringOptions[0] || selectedProductFilter == productFilteringOptions[2]){
-                        Console.ForegroundColor = UserInteractions.resultsColor;
-                        Console.WriteLine($"\t{product.ProductName}");
-                    }
-                }
-            }
-
-            Console.ForegroundColor = UserInteractions.defaultColor;
+            displayCategoryProductsActives(db.Categories.OrderBy(c => c.CategoryId));
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Product))
         {
-            String[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
+            string[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
             string locateMethod = UserInteractions.OptionsSelector(locateProductOptions, true);
 
             IQueryable<Product> products;
@@ -324,6 +294,33 @@ catch (Exception ex)
 logger.Info("Program ended");
 
 
+
+
+void displayCategoryProductsActives(IOrderedQueryable<Category> categories){
+    string[] productFilteringOptions = { "All products", "Discontinued products", "Active products" };
+    string selectedProductFilter = UserInteractions.OptionsSelector(productFilteringOptions, true);
+
+    categories = categories.Include("Products").OrderBy(p => p.CategoryId);
+
+    foreach (Category category in categories)
+    {
+        Console.ForegroundColor = UserInteractions.resultsColor;
+        Console.WriteLine($"\n{category.CategoryName}");
+        foreach (Product product in category.Products)
+        {
+            bool discontinued = product.Discontinued;
+            if(discontinued && (selectedProductFilter == productFilteringOptions[0] || selectedProductFilter == productFilteringOptions[1])){
+                Console.ForegroundColor = UserInteractions.discontinuedColor;
+                Console.WriteLine($"\t{product.ProductName}");
+            }else if(selectedProductFilter == productFilteringOptions[0] || selectedProductFilter == productFilteringOptions[2]){
+                Console.ForegroundColor = UserInteractions.resultsColor;
+                Console.WriteLine($"\t{product.ProductName}");
+            }
+        }
+    }
+
+    Console.ForegroundColor = UserInteractions.defaultColor;
+}
 
 
 
@@ -516,9 +513,9 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
     return mainMenuEnum switch
     {
         MAIN_MENU_OPTIONS.Exit => "Quit program",
-        MAIN_MENU_OPTIONS.Display_Categories => $"Display/Edit Categories", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
+        MAIN_MENU_OPTIONS.DisplayEdit_Categories => $"Display/Edit Categories", // on file (display max amount is {UserInteractions.PRINTOUT_RESULTS_MAX_TERMINAL_SPACE_HEIGHT / 11:N0})"
         MAIN_MENU_OPTIONS.Add_Category => "Add Category",
-        MAIN_MENU_OPTIONS.Display_Category_and_Related_Products => "Display Category and related products",
+        MAIN_MENU_OPTIONS.Display_Category_and_Related_Products => "Display a Category and it's related products",
         MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products => "Display all Categories and their related products",
         MAIN_MENU_OPTIONS.Add_Product => "Add a product",
         MAIN_MENU_OPTIONS.DisplayEdit_Product => "Display/Edit a specific product",
@@ -529,7 +526,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
 public enum MAIN_MENU_OPTIONS
 {
     Exit,
-    Display_Categories,
+    DisplayEdit_Categories,
     Add_Category,
     Display_Category_and_Related_Products,
     Display_All_Categories_and_Their_Related_Products,

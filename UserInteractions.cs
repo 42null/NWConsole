@@ -93,7 +93,7 @@ public sealed class UserInteractions
                         Console.ForegroundColor = addColor;
                     }else if(firstWord.ToLower() == "edit"){
                         Console.ForegroundColor = editColor;
-                    }else if(firstWord.ToLower() == "delete" || firstWord.ToLower() == "remove"){
+                    }else if(firstWord.ToLower() == "quit" || firstWord.ToLower() == "delete" || firstWord.ToLower() == "remove"){
                         Console.ForegroundColor = removeColor;
 
                     }else if(firstWord.Contains('/')){//TODO: Improve processing
