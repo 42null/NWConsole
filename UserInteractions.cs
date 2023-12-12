@@ -299,7 +299,6 @@ public sealed class UserInteractions
     {
         return userCreatedDoubleObtainer(message, minValue, maxValue, showRange, defaultValue.ToString(), places);
     }
-
     public static double userCreatedDoubleObtainer(string message, double minValue, double maxValue, bool showRange, string defaultValue, int places)
     {//Use -1 for no places
         string userInputRaw = null;

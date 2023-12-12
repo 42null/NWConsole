@@ -40,30 +40,44 @@ namespace NWConsole.Model
             this.Categories.Add(category);
             this.SaveChanges();
         }
-        
-        public void EditCategory(Category category, string name, string description, LoggerWithColors logger){
+
+        public void EditCategory(Category category, string name, string description, LoggerWithColors logger)
+        {
             Category targetCategory = this.Categories.First(c => c.CategoryId == category.CategoryId);
-            if(name.Length != 0){
-                if(this.Categories.Any(c => c.CategoryName == name)){
+            if (name.Length != 0)
+            {
+                if (this.Categories.Any(c => c.CategoryName == name))
+                {
                     logger.Error($"Category name of \"{name}\" already exists and cannot be used again for a name!");
-                }else{
+                }
+                else
+                {
                     targetCategory.CategoryName = name;
                 }
             }
-            if(description.Length != 0){
-                if(this.Categories.Any(c => c.Description == description)){
+            if (description.Length != 0)
+            {
+                if (this.Categories.Any(c => c.Description == description))
+                {
                     logger.Error($"Category description of \"{name}\" already exists and cannot be used again for a description!");
-                }else{
+                }
+                else
+                {
                     targetCategory.Description = description;
                 }
             }
             this.SaveChanges();
         }
 
-        public void DeleteProduct(Product product){
+        public void DeleteProduct(Product product)
+        {
+            Console.WriteLine("!!2!"+product.ProductName);
+            Console.WriteLine("!!2!"+product.CategoryId);
+            
             this.Products.Remove(product);
-            // TODO: REMOVE ORPHANS
-            this.SaveChanges();
+            // Remove Orphan
+            this.Categories.First(c => c.CategoryId == product.CategoryId).Products.Remove(product);
+            // this.SaveChanges();
         }
 
 

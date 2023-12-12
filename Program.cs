@@ -220,24 +220,24 @@ try
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product))
         {
-            Product product = new Product
+            Product newProduct = new Product
             {
                 ProductName = UserInteractions.UserCreatedStringObtainer("Please enter the name of the new product", 1, false, false),
                 CategoryId = selectCategory("Please select the product's category").CategoryId,
                 Discontinued = false, //New products should not start as discontinued
                 // product.QuantityPerUnit = UserInteractions.UserCreatedIntObtainer("Please enter how many there are per unit", 1, int.MaxValue, false).ToString();
                 QuantityPerUnit = UserInteractions.UserCreatedStringObtainer("Please enter how many there are per unit", 1, false, false),
-                UnitPrice = (decimal)UserInteractions.UserCreatedDoubleObtainer("Please enter the unit price per unit", 0, double.MaxValue, false, 0D, 2),
+                UnitPrice = (decimal)UserInteractions.UserCreatedDoubleObtainer("Please enter the unit price per unit", 0 , double.MaxValue, false, 0D, 2),
             };
 
-            ValidationContext context = new ValidationContext(product, null, null);
+            ValidationContext context = new ValidationContext(newProduct, null, null);
             List<ValidationResult> results = new List<ValidationResult>();
 
-            var isValid = Validator.TryValidateObject(product, context, results, true);
+            var isValid = Validator.TryValidateObject(newProduct, context, results, true);
             if (isValid)
             {
                 // check for unique name
-                if (db.Products.Any(r => r.ProductName == product.ProductName))
+                if (db.Products.Any(r => r.ProductName == newProduct.ProductName))
                 {
                     // generate validation error
                     isValid = false;
@@ -246,8 +246,9 @@ try
                 else
                 {
                     logger.Info("Validation passed");
-                    db.AddProduct(product);
-                    logger.Info($"Product added to category \"{product.Category.CategoryName}\" - {product.ProductName}");
+                    db.AddProduct(newProduct);
+                    logger.Info($"#######");
+                    logger.Info($"Product added to category \"{(db.Categories.FirstOrDefault(c => c.CategoryId == newProduct.CategoryId).CategoryName)}\" - {newProduct.ProductName}");
                 }
                 // TODO: Add check for category?
             }
@@ -267,7 +268,7 @@ try
             bool confirmedDelete = UserInteractions.UserCreatedBooleanObtainer($"Are you sure you want to delete this product ({selectedProduct.ProductName})", false);
             Console.ForegroundColor = UserInteractions.defaultColor;
             if(confirmedDelete){
-                db.DeleteProduct;
+                db.DeleteProduct(selectedProduct);
             }
         }
         else

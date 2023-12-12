@@ -17,7 +17,7 @@ namespace NWConsole.Model
         public int? SupplierId { get; set; }
         public int? CategoryId { get; set; }
         [Required(ErrorMessage = "A quantity-per-unit is required for a product, if it is singular, use 1")]
-        [StringLength(1, MinimumLength = 1, ErrorMessage = "Sorry, but you cannot have a blank quantity-per-unit")] //Found how at https://stackoverflow.com/a/11404559
+        // [StringLength(1, MinimumLength = 1, ErrorMessage = "Sorry, but you cannot have a blank quantity-per-unit")] //Found how at https://stackoverflow.com/a/11404559
         public string QuantityPerUnit { get; set; }
         public decimal? UnitPrice { get; set; }
         public short? UnitsInStock { get; set; }
