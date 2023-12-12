@@ -60,7 +60,11 @@ namespace NWConsole.Model
             this.SaveChanges();
         }
 
-
+        public void DeleteProduct(Product product){
+            this.Products.Remove(product);
+            // TODO: REMOVE ORPHANS
+            this.SaveChanges();
+        }
 
 
 

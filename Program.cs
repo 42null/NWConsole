@@ -28,6 +28,7 @@ string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU
 
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Delete_Product),
 
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
 
@@ -69,7 +70,7 @@ try
                 Console.Write("\".");
                 string newCategoryName = UserInteractions.UserCreatedStringObtainer($"Enter a new name now or leave blank to keep existing", 0, false, false);
                 string newCategoryDescription = UserInteractions.UserCreatedStringObtainer($"Enter a new description now or leave blank to keep existing", 0, false, false);
-                db.EditCategory(selectedCategory, newCategoryName, newCategoryDescription);
+                db.EditCategory(selectedCategory, newCategoryName, newCategoryDescription, logger);
             }
 
         }
@@ -128,26 +129,7 @@ try
         }
         else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.DisplayEdit_Product))
         {
-            string[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
-            string locateMethod = UserInteractions.OptionsSelector(locateProductOptions, true);
-
-            IQueryable<Product> products;
-            if (locateMethod == locateProductOptions[0])
-            {
-                Category productCategory = selectCategory("Please select the product's category");
-                products = db.Products.Where(p => p.CategoryId == productCategory.CategoryId);
-            }else if(locateMethod == locateProductOptions[1]){
-                string userInput = UserInteractions.UserCreatedStringObtainer("Please enter the search name of your product", 1, false, false);
-                products = db.Products.Where(p => p.ProductName.Contains(userInput));
-            }else{
-                string userInput = UserInteractions.UserCreatedIntObtainer("Please enter the id to search for your product", db.Products.Min(p => p.ProductId), db.Products.Max(p => p.ProductId), true).ToString();//TODO: Combine min & max to be more efficient and do beforehand to avoid re-computing
-                products = db.Products.Where(p => p.ProductId.ToString().Contains(userInput));
-            }
-            
-            
-            // String[] productNames = products.Select(p => p.ProductName).ToArray();
-            Product selectedProduct = selectProduct("Pick the product you wish to access", products);
-            // Console.WriteLine("");
+            Product selectedProduct = pickProduct(db);
             displayProduct(selectedProduct);
 
             if(UserInteractions.UserCreatedBooleanObtainer("Edit this product", false)){
@@ -277,6 +259,17 @@ try
                 }
             }
         }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Delete_Product))
+        {
+            Product selectedProduct = pickProduct(db);
+            displayProduct(selectedProduct);
+            Console.ForegroundColor = UserInteractions.warnColor;
+            bool confirmedDelete = UserInteractions.UserCreatedBooleanObtainer($"Are you sure you want to delete this product ({selectedProduct.ProductName})", false);
+            Console.ForegroundColor = UserInteractions.defaultColor;
+            if(confirmedDelete){
+                db.DeleteProduct;
+            }
+        }
         else
         {
             logger.Warn("That menu option is not available, please try again.");
@@ -292,6 +285,30 @@ catch (Exception ex)
 logger.Info("Program ended");
 
 
+
+
+
+Product pickProduct(NWContext db){
+    string[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
+    string locateMethod = UserInteractions.OptionsSelector(locateProductOptions, true);
+
+    IQueryable<Product> products;
+    if (locateMethod == locateProductOptions[0])
+    {
+        Category productCategory = selectCategory("Please select the product's category");
+        products = db.Products.Where(p => p.CategoryId == productCategory.CategoryId);
+    }else if(locateMethod == locateProductOptions[1]){
+        string userInput = UserInteractions.UserCreatedStringObtainer("Please enter the search name of your product", 1, false, false);
+        products = db.Products.Where(p => p.ProductName.Contains(userInput));
+    }else{
+        string userInput = UserInteractions.UserCreatedIntObtainer("Please enter the id to search for your product", db.Products.Min(p => p.ProductId), db.Products.Max(p => p.ProductId), true).ToString();//TODO: Combine min & max to be more efficient and do beforehand to avoid re-computing
+        products = db.Products.Where(p => p.ProductId.ToString().Contains(userInput));
+    }
+
+    // String[] productNames = products.Select(p => p.ProductName).ToArray();
+    Product selectedProduct = selectProduct("Pick the product you wish to access", products);
+    return selectedProduct;
+}
 
 
 void displayCategoryProductsActives(IOrderedQueryable<Category> categories){
@@ -517,6 +534,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Display_All_Categories_and_Their_Related_Products => "Display all Categories and their related products",
         MAIN_MENU_OPTIONS.Add_Product => "Add a product",
         MAIN_MENU_OPTIONS.DisplayEdit_Product => "Display/Edit a specific product",
+        MAIN_MENU_OPTIONS.Delete_Product => "Remove a product",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -529,5 +547,6 @@ public enum MAIN_MENU_OPTIONS
     Display_Category_and_Related_Products,
     Display_All_Categories_and_Their_Related_Products,
     Add_Product,
-    DisplayEdit_Product
+    DisplayEdit_Product,
+    Delete_Product
 }

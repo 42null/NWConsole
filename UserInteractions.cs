@@ -82,12 +82,31 @@ public sealed class UserInteractions
                     int firstSpaceIndex = line.IndexOf(") ")+2;
                     int afterFirstIndex = line.Substring(firstSpaceIndex).IndexOf(" ");
 
+                    string firstWord = line.Substring(firstSpaceIndex,afterFirstIndex);
+                    string secondSegment = line.Substring(firstSpaceIndex+afterFirstIndex);
+
                     string beforeWord = line.Substring(0,firstSpaceIndex);
                     Console.Write(beforeWord);
 
-                    string firstWord = line.Substring(firstSpaceIndex,afterFirstIndex);
                     Boolean firstWordShown = false;
-                    if(firstWord.ToLower() == "display"){
+
+                    if(firstWord.Contains("Display/Edit/Remove")){
+                        Console.ForegroundColor = displayColor;
+                        Console.Write("Display");
+                        Console.ForegroundColor = existingColor;
+                        Console.Write("/");
+                        Console.ForegroundColor = editColor;
+                        Console.Write("Edit");
+                        Console.ForegroundColor = existingColor;
+                        Console.Write("/");
+                        Console.ForegroundColor = removeColor;
+                        Console.Write("Remove");
+                        Console.ForegroundColor = existingColor;
+
+                        // Console.WriteLine();
+                        firstWordShown = true;
+                        // continue;//Just skip the rest and do it here
+                    }else if(firstWord.ToLower() == "display"){
                         Console.ForegroundColor = displayColor;
                     }else if(firstWord.ToLower() == "add"){
                         Console.ForegroundColor = addColor;
@@ -111,7 +130,7 @@ public sealed class UserInteractions
                     if(!firstWordShown){ Console.Write(firstWord); }
 
                     Console.ForegroundColor = existingColor;
-                    Console.WriteLine(line.Substring(firstSpaceIndex+afterFirstIndex));
+                    Console.WriteLine(secondSegment);
                 }
             }else{
                 Console.WriteLine(optionsTextAsStr);
