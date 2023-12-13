@@ -306,14 +306,22 @@ Product pickProduct(NWContext db){
     string[] locateProductOptions = { "Find by category", "Search by name", "Search by id" };
     string locateMethod = UserInteractions.OptionsSelector(locateProductOptions, true);
 
-    IQueryable<Product> products;
+    IQueryable<Product> products = null;
     if (locateMethod == locateProductOptions[0])
     {
         Category productCategory = selectCategory("Please select the product's category");
         products = db.Products.Where(p => p.CategoryId == productCategory.CategoryId);
     }else if(locateMethod == locateProductOptions[1]){
-        string userInput = UserInteractions.UserCreatedStringObtainer("Please enter the search name of your product", 1, false, false);
-        products = db.Products.Where(p => p.ProductName.Contains(userInput));
+        bool failedToFindProduct = true;
+        while(failedToFindProduct){
+            try{
+                string userInput = UserInteractions.UserCreatedStringObtainer("Please enter the search name of your product", 1, false, false).ToLower();
+                products = db.Products.Where(p => p.ProductName.Contains(userInput));
+                failedToFindProduct = false;
+            }catch(Exception e){//Crashes if nothing was returned
+                logger.Warn("Sorry but there were no products that fit that search, please enter a new search.");
+            }
+        }
     }else{
         string userInput = UserInteractions.UserCreatedIntObtainer("Please enter the id to search for your product", db.Products.Min(p => p.ProductId), db.Products.Max(p => p.ProductId), true).ToString();//TODO: Combine min & max to be more efficient and do beforehand to avoid re-computing
         products = db.Products.Where(p => p.ProductId.ToString().Contains(userInput));
