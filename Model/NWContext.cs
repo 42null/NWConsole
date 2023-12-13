@@ -70,16 +70,27 @@ namespace NWConsole.Model
         }
 
         public void DeleteProduct(Product product)
-        {
-            Console.WriteLine("!!2!"+product.ProductName);
-            Console.WriteLine("!!2!"+product.CategoryId);
-            
+        {            
             this.Products.Remove(product);
             // Remove Orphan
-            this.Categories.First(c => c.CategoryId == product.CategoryId).Products.Remove(product);
-            // this.SaveChanges();
+            try{//In a try as if empty, LinQ crashes when removing child
+                this.Categories.First(c => c.CategoryId == product.CategoryId).Products.Remove(product);
+                this.SaveChanges();
+            }catch(Exception e){};
         }
 
+        public void DeleteCategory(Category category)
+        {
+            try{//In a try as if category is empty, LinQ crashes when removing children
+                // Remove Orphans
+                foreach(var product in this.Products.Where(p => p.CategoryId == category.CategoryId)){
+                    this.Products.Remove(product);
+                }
+            }catch(Exception e){};
+
+            this.Categories.Remove(category);
+            this.SaveChanges();
+        }
 
 
 

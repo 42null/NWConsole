@@ -29,6 +29,7 @@ string[] MAIN_MENU_OPTIONS_IN_ORDER = { enumToStringMainMenuWorkaround(MAIN_MENU
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Category),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Add_Product),
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Delete_Product),
+                                        enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Delete_Category),
 
                                         enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Exit)};
 
@@ -247,7 +248,6 @@ try
                 {
                     logger.Info("Validation passed");
                     db.AddProduct(newProduct);
-                    logger.Info($"#######");
                     logger.Info($"Product added to category \"{(db.Categories.FirstOrDefault(c => c.CategoryId == newProduct.CategoryId).CategoryName)}\" - {newProduct.ProductName}");
                 }
                 // TODO: Add check for category?
@@ -267,8 +267,21 @@ try
             Console.ForegroundColor = UserInteractions.warnColor;
             bool confirmedDelete = UserInteractions.UserCreatedBooleanObtainer($"Are you sure you want to delete this product ({selectedProduct.ProductName})", false);
             Console.ForegroundColor = UserInteractions.defaultColor;
+            logger.Info($"User decided to{(confirmedDelete?"":" not")} delete the product \"{selectedProduct.ProductName}\"");
             if(confirmedDelete){
                 db.DeleteProduct(selectedProduct);
+            }
+        }
+        else if (menuCheckCommand == enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS.Delete_Category))
+        {
+            Category selectedCategory = selectCategory("Pick the category you wish to delete");
+            
+            Console.ForegroundColor = UserInteractions.warnColor;
+            bool confirmedDelete = UserInteractions.UserCreatedBooleanObtainer($"Are you sure you want to delete this category ({selectedCategory.CategoryName}) with all of its products", false);
+            Console.ForegroundColor = UserInteractions.defaultColor;
+            logger.Info($"User decided to {(confirmedDelete?"":"not ")} delete the category \"{selectedCategory.CategoryName}\"");
+            if(confirmedDelete){
+                db.DeleteCategory(selectedCategory);
             }
         }
         else
@@ -536,6 +549,7 @@ string enumToStringMainMenuWorkaround(MAIN_MENU_OPTIONS mainMenuEnum)
         MAIN_MENU_OPTIONS.Add_Product => "Add a product",
         MAIN_MENU_OPTIONS.DisplayEdit_Product => "Display/Edit a specific product",
         MAIN_MENU_OPTIONS.Delete_Product => "Remove a product",
+        MAIN_MENU_OPTIONS.Delete_Category => "Remove a category",
         _ => "ERROR_MAIN_MENU_OPTION_DOES_NOT_EXIST"
     };
 }
@@ -549,5 +563,6 @@ public enum MAIN_MENU_OPTIONS
     Display_All_Categories_and_Their_Related_Products,
     Add_Product,
     DisplayEdit_Product,
-    Delete_Product
+    Delete_Product,
+    Delete_Category
 }
